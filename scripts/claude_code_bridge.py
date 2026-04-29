@@ -262,7 +262,9 @@ def _build_claude_cmd(
         permission_mode,
     ]
 
-    if verbose:
+    # Some Claude Code versions require --verbose whenever --print is combined
+    # with --output-format=stream-json, even if help text does not state it.
+    if verbose or output_format == "stream-json":
         cmd.append("--verbose")
 
     if tools is not None:

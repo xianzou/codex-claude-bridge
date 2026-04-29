@@ -31,6 +31,25 @@ class ReadonlyToolsTests(unittest.TestCase):
         self.assertEqual(bridge.DEFAULT_READONLY_TOOLS, "Read,Glob,Grep,LS")
 
 
+class ClaudeCommandTests(unittest.TestCase):
+    def test_stream_json_always_enables_verbose(self):
+        cmd = bridge._build_claude_cmd(
+            claude_bin="claude",
+            prompt="hello",
+            output_format="stream-json",
+            model="claude-opus-4-6",
+            permission_mode="plan",
+            tools=None,
+            allowed_tools=None,
+            session_id="",
+            continue_session=False,
+            claude_settings={},
+            max_turns=None,
+            verbose=False,
+        )
+        self.assertIn("--verbose", cmd)
+
+
 class WindowsLaunchBehaviorTests(unittest.TestCase):
     def test_windows_popen_kwargs_hide_console(self):
         kwargs = bridge._get_windows_popen_kwargs()
