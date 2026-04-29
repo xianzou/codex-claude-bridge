@@ -73,7 +73,7 @@ python <script_loc> --no-full-access --cd "/path/to/repo" --PROMPT "Review the a
 自动化严格提取单个标记：
 
 ```bash
-python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MARKER" --PROMPT "Fully understand the repo first. Reply with exactly OK_MARKER."
+python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MARKER" --PROMPT "Implement only the scoped task below and reply with exactly OK_MARKER when finished."
 ```
 
 如果 Claude 输出里能找到独立一行的 `OK_MARKER`（允许其余解释文字同时存在），bridge 会仅返回该标记；否则直接返回 `success: false`，避免自动流程误判。
@@ -82,6 +82,15 @@ python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MA
 
 ## 推荐协作方式
 
+- 默认把 Claude Code 当作“弱规划、强执行”的 worker，除非当前任务本身就是代码库调研或架构研究。
+- 主控代理应先理解任务、拆分范围，再委派给 Claude；不要默认把前期任务定义工作外包给 Claude。
+- 给 Claude 的任务包应尽量窄，并明确写清：
+  - 目标行为
+  - 允许修改的文件
+  - 禁止修改的区域
+  - 复用要求与实现约束
+  - 非目标与禁止扩展项
+  - 验收方式
 - 一个 Claude worker 最好只做一个明确目标，不要混多个子任务。
 - 自动调度时，完成信号和自然语言结果应分开处理。
   - 自动化场景优先使用 `--extract-exact "TASK_DONE"` 这类硬标记。
@@ -95,8 +104,8 @@ python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MA
 
 这个 skill 最适合下面这种模式：`Codex` 做总控，`Claude Code` 做执行 worker。
 
-1. `Codex` 先做需求分析、任务拆解，并决定当前这一轮要让某个 Claude worker 做什么。
-2. `Codex` 通过 bridge 发出一个聚焦的单一任务。
+1. `Codex` 先做需求分析、任务拆解，并明确目标、允许修改范围、禁止修改范围、非目标与验收标准。
+2. `Codex` 通过 bridge 发出一个聚焦的单一执行任务，而不是让 Claude 自行决定需求边界。
 3. `Claude Code` 返回结构化 JSON：`success`、`SESSION_ID`、`agent_messages`。
 4. `Codex` 自己检查 diff、跑测试、做验收判断。
 5. 如果结果不合格，`Codex` 带着同一个 `SESSION_ID` 继续追问或要求修复，而不是从头开新会话。

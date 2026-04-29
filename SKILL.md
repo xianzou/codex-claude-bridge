@@ -26,10 +26,32 @@ Claude Code often needs **1–2+ minutes** per task.
 
 ## Usage
 
-- please always require claude code to fully understand the codebase before responding or making any changes.
+- Default delegation mode: treat Claude Code as a **weak planner, strong executor** unless the task is explicitly codebase exploration or architecture research.
+- The supervising agent must understand the task and define the boundaries before delegating. Do not offload initial task framing to Claude by default.
+- Give Claude a narrow execution package:
+  - the concrete goal
+  - the expected behavior
+  - the files it may change
+  - the files or areas it must not change
+  - constraints and non-goals
+  - the exact verification or acceptance criteria
+- Do not ask Claude to freely explore or fully understand the codebase for routine implementation tasks. Only request broad codebase understanding when that exploration is itself the task.
+- Prefer explicit instructions such as: what to modify, what to reuse, what not to refactor, and what not to add.
 - Put codex-claude-bridge terminal commands in the background terminal.
-- Always review claude code's responses (or changes it makes) and make sure they are correct, constructive and complete.
-- When claude code asks clarifying questions in a multi-turn session, always respond to its questions in that session based on current situation.
+- Always review Claude Code's responses, diffs, and verification claims; Claude does not self-accept work.
+- When Claude asks clarifying questions in a multi-turn session, answer with current constraints and keep the worker within the original task boundary.
+
+### Delegation template
+
+Use a prompt structure close to this for execution tasks:
+
+1. Objective: one concrete outcome.
+2. Allowed edits: exact files or directories Claude may modify.
+3. Forbidden edits: shared contracts, config, routes, dependencies, unrelated files, or any area you want frozen.
+4. Implementation instructions: what pattern to follow, what existing code to reuse, and what behavior to preserve.
+5. Non-goals: explicitly list enhancements or refactors Claude must not add.
+6. Acceptance: exact runtime behavior, tests, or checks required for supervisor review.
+7. Response format: changed files, summary of changes, blockers, and verification run.
 
 ## Operational rules
 
@@ -80,7 +102,7 @@ python <script_loc> \
   --no-full-access \
   --cd "/path/to/repo" \
   --extract-exact "OK_MARKER" \
-  --PROMPT "Fully understand the repo first. Reply with exactly OK_MARKER."
+  --PROMPT "Implement only the scoped task below and reply with exactly OK_MARKER when finished."
 ```
 
 When the marker is found as a standalone line in Claude output, the bridge returns only that marker in `agent_messages`. If not found, the bridge returns `success: false` to avoid silent misclassification.

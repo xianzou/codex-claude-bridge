@@ -73,7 +73,7 @@ python <script_loc> --no-full-access --cd "/path/to/repo" --PROMPT "Review the a
 Strict extraction of a single marker for automation:
 
 ```bash
-python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MARKER" --PROMPT "Fully understand the repo first. Reply with exactly OK_MARKER."
+python <script_loc> --no-full-access --cd "/path/to/repo" --extract-exact "OK_MARKER" --PROMPT "Implement only the scoped task below and reply with exactly OK_MARKER when finished."
 ```
 
 If Claude output contains `OK_MARKER` as a standalone line, the bridge returns only that marker in `agent_messages`; otherwise it returns `success: false` to avoid silent misclassification in automation.
@@ -82,6 +82,15 @@ For a more complete parameter reference and multi-turn session usage, see `SKILL
 
 ## Recommended collaboration pattern
 
+- By default, treat Claude Code as a weak planner and strong executor unless the task is explicitly codebase exploration or architecture research.
+- The supervising agent should understand the task and define the boundaries before delegating. Do not offload initial task framing to Claude by default.
+- Give Claude a narrow execution package that clearly states:
+  - the expected behavior
+  - the files it may change
+  - the areas it must not change
+  - reuse requirements and implementation constraints
+  - non-goals and forbidden enhancements
+  - the acceptance criteria
 - A Claude worker should usually have one clear objective. Do not mix multiple sub-tasks into a single worker prompt.
 - Treat completion signals separately from natural-language output.
   - For automation, prefer hard markers such as `--extract-exact "TASK_DONE"`.
@@ -94,8 +103,8 @@ For a more complete parameter reference and multi-turn session usage, see `SKILL
 
 This skill fits best when `Codex` acts as the supervising agent and `Claude Code` acts as an implementation worker:
 
-1. `Codex` analyzes the request, decomposes the work, and decides what one Claude worker should do next.
-2. `Codex` calls this bridge with one focused prompt for that worker.
+1. `Codex` analyzes the request, decomposes the work, and defines the objective, allowed edit scope, forbidden areas, non-goals, and acceptance criteria for the next worker task.
+2. `Codex` calls this bridge with one focused execution prompt for that worker instead of asking Claude to discover the task boundary on its own.
 3. `Claude Code` returns structured JSON with `success`, `SESSION_ID`, and `agent_messages`.
 4. `Codex` inspects the diff, runs tests, and decides whether the result is acceptable.
 5. If the result is not acceptable, `Codex` sends follow-up instructions with the same `SESSION_ID` so Claude continues the same task instead of restarting from scratch.
