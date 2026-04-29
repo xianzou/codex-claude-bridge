@@ -33,7 +33,7 @@ mkdir -p ~/.codex/skills
 
 ```bash
 cd ~/.codex/skills
-git clone https://github.com/xianzou/collaborating-with-claude-code.git codex-claude-bridge
+git clone https://github.com/xianzou/codex-claude-bridge.git codex-claude-bridge
 ```
 
 3) 验证文件结构（至少应包含 `SKILL.md` 和 `scripts/`）：
